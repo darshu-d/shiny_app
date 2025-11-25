@@ -10,18 +10,22 @@
 library(shiny)
 dig_dataset <- read.csv("DIG.csv")
 ui <- fluidPage(
-  titlePanel("Digitalis Investigation Group test"),
-  sidebarLayout(
+ titlePanel("Digitalis Investigation Group test"),
+  sidebarLayout (
     sidebarPanel(
       selectInput(inputId = "TRTMT", label = "Select Treatment type", choices = c("Digoxin", "Placebo"), multiple = FALSE),
-      selectInput(inputId = "Sex", label = "Select patient sex", choices = c("Male", "Female"), multiple = FALSE)
-    ),
+      selectInput(inputId = "Sex", label = "Select patient sex", choices = c("Male", "Female"), multiple = FALSE),
+      selectInput(inputId = "age",label = "Select age group",choices = c("19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"),
+                  multiple = FALSE)
+      ),
+    
     mainPanel(
+  
     )
   )
 )
 
-
+ 
 server <- function(input, output) {
   
 }
