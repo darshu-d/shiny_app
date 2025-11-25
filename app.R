@@ -10,7 +10,7 @@
 library(shiny)
 dig_dataset <- read.csv("DIG.csv")
 ui <- fluidPage(
-  titlePanel("Digitalis Investigation Group"),
+  titlePanel("Digitalis Investigation Group test"),
   sidebarLayout(
     sidebarPanel(
       selectInput(inputId = "TRTMT", label = "Select Treatment type", choices = c("Digoxin", "Placebo"), multiple = FALSE),
