@@ -1,14 +1,28 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
+#installing libraries 
 library(shiny)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(survival)
+library(survminer)
+
+#load dataset
 dig_dataset <- read.csv("DIG.csv")
+
+#age definition
+dig_dataset$age_group <- cut(
+  dig_dataset$AGE,
+  breaks = c(18,30,40,50,60,70,80,200),
+  labels = c("19-30","31-40","41-50","51-60","61-70","71-80","80+"),
+  include.lowest = TRUE
+)
+
+#converting Char to fact
+dig_dataset <- dig_dataset %>%
+  mutate(across(where(is.character), as.factor))
+
+#ui part
 ui <- fluidPage(
  titlePanel("Digitalis Investigation Group test"),
   sidebarLayout (
@@ -25,11 +39,11 @@ ui <- fluidPage(
   )
 )
 
- 
+#server part
 server <- function(input, output) {
-  
+
 }
 
 shinyApp(ui = ui, server = server)
 
-#connected successfully 
+#connected successfully
