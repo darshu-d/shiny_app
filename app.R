@@ -8,7 +8,7 @@
 #
 
 library(shiny)
-dig_dataset <- read.csv("C:/Users/sivak/Downloads/DIG-1.csv")
+dig_dataset <- read.csv("DIG.csv")
 ui <- fluidPage(
   titlePanel("Digitalis Investigation Group"),
   sidebarLayout(
@@ -27,3 +27,5 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
+
+#connected successfully 
