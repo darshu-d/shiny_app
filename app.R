@@ -23,60 +23,118 @@ dig_dataset <- dig_dataset %>%
 
 #ui part
 ui <- fluidPage(
- titlePanel("Digitalis Investigation Group test"),
+  # TITLE
+  div(style="background:#2C3E50; padding:18px; color:white; 
+             font-size:28px; font-weight:bold; text-align:center;
+             border-radius:6px; margin-bottom:15px;",
+      "Digitalis Investigation Group – Exploratory Dashboard"
+  ),
   sidebarLayout (
     sidebarPanel(
-      width = 2,
-      selectInput(inputId = "TRTMT", label = "Select Treatment type", choices = c("Digoxin", "Placebo"), multiple = FALSE),
-      selectInput(inputId = "Sex", label = "Select patient sex", choices = c("Male", "Female"), multiple = FALSE),
-      selectInput(inputId = "age",label = "Select age group",choices = c("19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"),
-                  multiple = FALSE)
+      width = 2,h4("Filters"),tags$hr(),
+      selectInput("TRTMT", "Treatment", choices = c("All", "Digoxin", "Placebo"), selected = "All"),
+      selectInput("Sex", "Sex", choices = c("All", "Male", "Female"), selected = "All"),
+      selectInput("Age", "Age Group",choices = c("All", "19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"), selected = "All")
       ),
-    
+
+#main panel
     mainPanel(
-      
-  #VALUE BOXES
-      fluidRow(
+      tabsetPanel(
+       tabPanel("Overview",
+                  br(),
+                  
+                  fluidRow(
         
         # Total Patients
         column(width = 4,
-          div(style="background:#6A5ACD; padding:20px; border-radius:10px; color:white; position:relative; overflow:hidden;",
-              div(style="font-size:32px; font-weight:bold;", textOutput("totalPatients")),
-              div(style="font-size:14px; margin-top:5px;", "Total Patients"),
-              div(style="position:absolute; right:10px; top:10px; font-size:60px; opacity:0.3;","👥")
+          div(style="background:#6A5ACD; padding:20px; border-radius:10px; color:white;",
+              div(style="font-size:34px; font-weight:bold;", textOutput("totalPatients")),
+              div(style="font-size:16px; margin-top:6px;", "Total Patients")
           )
         ),
         
         # Alive Patients
         column(width = 4,
-          div(style="background:#019875; padding:20px; border-radius:10px; color:white; position:relative; overflow:hidden;",
-              div(style="font-size:32px; font-weight:bold;", textOutput("alivePatients")),
-              div(style="font-size:14px; margin-top:5px;", "Alive Patients"),
-              div(style="position:absolute; right:10px; top:10px; font-size:60px; opacity:0.3;","❤️")
+          div(style="background:#019875; padding:20px; border-radius:10px; color:white;",
+              div(style="font-size:34px; font-weight:bold;", textOutput("alivePatients")),
+              div(style="font-size:16px; margin-top:6px;", "Alive Patients"),
           )
         ),
         
         # Deaths
         column(width = 4,
-          div(style="background:#F39C12; padding:20px; border-radius:10px; color:white; position:relative;overflow:hidden;",
-              div(style="font-size:32px; font-weight:bold;", textOutput("deadPatients")),
-              div(style="font-size:14px; margin-top:5px;", "Deaths"),
-              div(style="position:absolute;right:10px; top:10px; font-size:60px; opacity:0.3;", "⚰️")
+          div(style="background:#F39C12; padding:20px; border-radius:10px; color:white;",
+              div(style="font-size:34px; font-weight:bold;", textOutput("deadPatients")),
+              div(style="font-size:16px; margin-top:6px;", "Deaths")
           )
         )
-      )
+    
+    ),
+    
+    br(),
+    h4("Age Group Distribution"),
+    plotOutput("agePlot", height = "350px")
+    
+      ),
+    
+#2nd tab
+    tabPanel("Patient Data",
+             br(),
+             DTOutput("patientTable")
+     )
     )
-  ) 
+   )
+ )
 )
-
-
 #server part
 server <- function(input, output) {
+  
+  filtered_data <- reactive({
+    data <- dig_dataset
+    
+    # Treatment filter
+    if (input$TRTMT != "All") {
+      data <- data %>% 
+        filter(TRTMT == ifelse(input$TRTMT=="Digoxin", 1, 0))
+    }
+    
+    # Sex filter
+    if (input$Sex != "All") {
+      data <- data %>% 
+        filter(SEX == ifelse(input$Sex=="Male", 1, 2))
+    }
+    
+    # Age group filter
+    if (input$Age != "All") {
+      data <- data %>% filter(age_group == input$Age)
+    }
+    
+    return(data)
+  })
 
-  #VALUE BOX NUMBERS
-  output$totalPatients <- renderText({ nrow(dig_dataset) })
-  output$alivePatients <- renderText({ sum(dig_dataset$DEATH == 0, na.rm = TRUE) })
-  output$deadPatients  <- renderText({ sum(dig_dataset$DEATH == 1, na.rm = TRUE) })
+#VALUE BOX NUMBERS
+  output$totalPatients <- renderText({ nrow(filtered_data())})
+  output$alivePatients <- renderText({ sum(filtered_data()$DEATH == 0, na.rm = TRUE)})
+  output$deadPatients  <- renderText({ sum(filtered_data()$DEATH == 1, na.rm = TRUE)})
+
+#DISTRIBUTION PLOT
+output$agePlot <- renderPlot({
+  filtered_data() %>%
+    ggplot(aes(x = age_group, fill = as.factor(TRTMT))) +
+    geom_bar(position = "dodge") +
+    scale_fill_manual(values = c("#6A5ACD", "#F39C12"),
+                      labels = c("Placebo", "Digoxin")) +
+    labs(x = "Age Group", y = "Count", fill = "Treatment",
+         title = "Age Group Distribution by Treatment") +
+    theme_minimal(base_size = 14)
+})
+
+
+#DATA TABLE
+output$patientTable <- renderDT({
+  datatable(filtered_data(), 
+            options = list(pageLength = 10, scrollX = TRUE))
+ })
 }
 
 shinyApp(ui = ui, server = server)
