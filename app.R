@@ -140,14 +140,17 @@ server <- function(input, output) {
 
 #AGE DISTRIBUTION PLOT
 output$agePlot <- renderPlot({
-  filtered_data() %>%
-    ggplot(aes(x = age_group, fill = TRTMT)) +
+  df <- filtered_data()
+  ggplot(df, aes(x = age_group, fill = TRTMT)) +
     geom_bar(position = "dodge") +
-    scale_fill_manual(values = c("#6A5ACD", "#F39C12"),
-                      labels = c("Placebo", "Digoxin")) +
-    labs(x = "Age Group", y = "Count", fill = "Treatment",
+    scale_fill_manual(
+      values = c("Placebo" = "#6A5ACD", "Digoxin" = "#F39C12"),
+                      drop = TRUE
+  ) +
+  labs(x = "Age Group", y = "Count", fill = "Treatment",
          title = "Age Group Distribution by Treatment") +
-    theme_minimal(base_size = 14)
+    theme_minimal(base_size = 14) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 })
 
 
