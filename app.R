@@ -19,7 +19,9 @@ dig_dataset$age_group <- cut(
 
 #converting Char to fact
 dig_dataset <- dig_dataset %>%
-  mutate(across(where(is.character), as.factor))
+  mutate(across(where(is.character), as.factor))%>%
+  mutate(TRTMT = factor(TRTMT, levels = c(0,1), labels = c("Placebo", "Digoxin")),
+         SEX = factor(SEX, levels =c(1,2), labels = c("Male", "Female")))
 
 #ui part
 ui <- fluidPage(
@@ -77,10 +79,29 @@ ui <- fluidPage(
     
       ),
     
-#2nd tab
+#2nd tab - Patient Data
     tabPanel("Patient Data",
              br(),
-             DTOutput("patientTable")
+             DTOutput("patientTable"),
+             
+#Tab - Survival analysis
+    tabPanel("Survival Analysis",
+             br(),
+             fluidRow(
+               column(8, plotOutput("kmPlot", height = "400px")),
+               column(4,
+                      downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
+                      br(), br(),
+                      verbatimTextOutput("Survival Summary")
+                      )
+             )),
+# Tab - Clinical outcomes
+    tabPanel("Clinical Outcomes",
+             br(),
+             fluidRow(
+               column(6, plotOutput("bpPlot", height = "350px")),
+               column(6, plotOutput("biomarkerPlot", height = "350px"))
+             ))
      )
     )
    )
@@ -117,7 +138,7 @@ server <- function(input, output) {
   output$alivePatients <- renderText({ sum(filtered_data()$DEATH == 0, na.rm = TRUE)})
   output$deadPatients  <- renderText({ sum(filtered_data()$DEATH == 1, na.rm = TRUE)})
 
-#DISTRIBUTION PLOT
+#AGE DISTRIBUTION PLOT
 output$agePlot <- renderPlot({
   filtered_data() %>%
     ggplot(aes(x = age_group, fill = as.factor(TRTMT))) +
@@ -130,11 +151,15 @@ output$agePlot <- renderPlot({
 })
 
 
-#DATA TABLE
+#PATIENT TABLE
 output$patientTable <- renderDT({
-  datatable(filtered_data(), 
-            options = list(pageLength = 10, scrollX = TRUE))
+  datatable(filtered_data() %>%
+              select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DEATH, DEATHDAY),
+            options = list(pageLength = 10, scrollX = TRUE),
+            rownames = FALSE)
  })
+
+
 }
 
 shinyApp(ui = ui, server = server)
