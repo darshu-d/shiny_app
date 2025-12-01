@@ -63,7 +63,7 @@ ui <- fluidPage(
           )
         ),
         
-        # Deaths
+        # Dead patients
         column(width = 4,
           div(style="background:#F39C12; padding:20px; border-radius:10px; color:white;",
               div(style="font-size:34px; font-weight:bold;", textOutput("deadPatients")),
@@ -116,13 +116,13 @@ server <- function(input, output) {
     # Treatment filter
     if (input$TRTMT != "All") {
       data <- data %>% 
-        filter(TRTMT == ifelse(input$TRTMT=="Digoxin", 1, 0))
+        filter(TRTMT == input$TRTMT)
     }
     
     # Sex filter
     if (input$Sex != "All") {
       data <- data %>% 
-        filter(SEX == ifelse(input$Sex=="Male", 1, 2))
+        filter(SEX == input$Sex)
     }
     
     # Age group filter
@@ -141,7 +141,7 @@ server <- function(input, output) {
 #AGE DISTRIBUTION PLOT
 output$agePlot <- renderPlot({
   filtered_data() %>%
-    ggplot(aes(x = age_group, fill = as.factor(TRTMT))) +
+    ggplot(aes(x = age_group, fill = TRTMT)) +
     geom_bar(position = "dodge") +
     scale_fill_manual(values = c("#6A5ACD", "#F39C12"),
                       labels = c("Placebo", "Digoxin")) +
