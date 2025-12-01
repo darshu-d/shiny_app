@@ -159,7 +159,17 @@ output$patientTable <- renderDT({
             rownames = FALSE)
  })
 
-
+#Kaplan-Meier survival plot
+output$kmPlot <- renderPlot({
+  fit <- survfit(Surv(DEATHDAY, DEATH)~TRTMT, data= filtered_data())
+  ggsurvplot(fit,
+             data = filtered_data(),
+             pval = TRUE,
+             conf.int = TRUE,
+             risk.table = TRUE,
+             risk.table.height = 0.5,
+             ggtheme = theme_minimal())
+})
 }
 
 shinyApp(ui = ui, server = server)
