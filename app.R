@@ -92,7 +92,10 @@ ui <- fluidPage(
                       br(), br(),
                       verbatimTextOutput("Survival Summary")
                 )
-             )
+             ),
+             br(),
+             h4("Risk Table"),
+             DTOutput("riskTable")
           ),
 #4th Tab - Clinical outcomes
     tabPanel("Clinical Outcomes",
@@ -234,6 +237,40 @@ output$downloadKM <- downloadHandler(
     ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300)  # ✔ Correct reactive call
   }
 )
+
+#Risk table
+output$riskTable <- renderDT({
+  
+  req(filtered_data())
+  
+  df <- filtered_data()
+  
+  risk_df <- df %>%
+    group_by(TRTMT) %>%
+    summarise(
+      N = n(),
+      Events = sum(DEATH == 1, na.rm = TRUE),
+      Censored = sum(DEATH == 0, na.rm = TRUE),
+      Median_Survival = median(DEATHDAY[DEATH == 1], na.rm = TRUE)
+    ) %>%
+    mutate(
+      TRTMT = ifelse(TRTMT == "Placebo", "Placebo", "Digoxin")
+    )
+  
+  datatable(
+    risk_df,
+    options = list(
+      dom = 't',        # ← IMPORTANT: removes search box & show entries
+      paging = FALSE,   # ← no pagination
+      ordering = TRUE,  # keep sorting allowed
+      autoWidth = TRUE
+    ),
+    rownames = FALSE
+  )
+})
+
+
+
 }
 
 shinyApp(ui = ui, server = server)
