@@ -87,7 +87,7 @@ ui <- fluidPage(
     tabPanel("Survival Analysis",
              br(),
              fluidRow(
-               column(8, plotOutput("kmPlot", height = "400px")),
+               column(8, plotlyOutput("kmPlot", height = "400px")),
                column(4, downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
                       br(), br(),
                       verbatimTextOutput("Survival Summary")
@@ -162,16 +162,54 @@ output$patientTable <- renderDT({
  })
 
 #Kaplan-Meier survival plot
-output$kmPlot <- renderPlot({
-  fit <- survfit(Surv(DEATHDAY, DEATH)~TRTMT, data= filtered_data())
+km_object <- reactive({
+  fit <- survfit(Surv(DEATHDAY, DEATH) ~ TRTMT, data = filtered_data())
+
   ggsurvplot(fit,
              data = filtered_data(),
              pval = TRUE,
              conf.int = TRUE,
-             risk.table = TRUE,
-             risk.table.height = 0.5,
-             ggtheme = theme_minimal())
+             risk.table = FALSE,
+             legend.labs = c("Placebo", "Digoxin"),   
+             legend.title = "Treatment",   
+             ggtheme = theme_minimal(),
+             palette = c("#6A5ACD", "#F39C12")
+  )
+
 })
+
+output$kmPlot <- renderPlotly({
+  
+  ggplotly(km_object()$plot) %>%   
+    layout(
+      hovermode = "closest",
+      xaxis = list(title = "Time (Days)"),
+      yaxis = list(title = "Survival Probability"),
+      showlegend = TRUE
+    ) %>%
+    config(displaylogo = FALSE,
+           modeBarButtonsToRemove = c(
+             "zoom2d",
+             "pan2d",
+             "lasso2d",
+             "select2d",
+             "hoverClosestCartesian",   
+             "hoverCompareCartesian", 
+             "toggleSpikelines"
+             )
+    )
+})
+
+# Download option
+output$downloadKM <- downloadHandler(
+  filename = function() {
+    "KM_plot.png"
+  },
+  
+  content = function(file) {
+    ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300)  # ✔ Correct reactive call
+  }
+)
 }
 
 shinyApp(ui = ui, server = server)
