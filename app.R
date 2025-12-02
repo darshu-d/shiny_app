@@ -37,7 +37,7 @@ ui <- fluidPage(
       selectInput("TRTMT", "Treatment", choices = c("All", "Digoxin", "Placebo"), selected = "All"),
       selectInput("Sex", "Sex", choices = c("All", "Male", "Female"), selected = "All"),
       selectInput("Age", "Age Group",choices = c("All", "19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"), selected = "All")
-      ),
+    ),
 
 #main panel
     mainPanel(
@@ -59,7 +59,7 @@ ui <- fluidPage(
         column(width = 4,
           div(style="background:#019875; padding:20px; border-radius:10px; color:white;",
               div(style="font-size:34px; font-weight:bold;", textOutput("alivePatients")),
-              div(style="font-size:16px; margin-top:6px;", "Alive Patients"),
+              div(style="font-size:16px; margin-top:6px;", "Alive Patients")
           )
         ),
         
@@ -70,42 +70,41 @@ ui <- fluidPage(
               div(style="font-size:16px; margin-top:6px;", "Deaths")
           )
         )
-    
     ),
     
     br(),
     h4("Age Group Distribution"),
     plotOutput("agePlot", height = "350px")
-    
-      ),
+),
     
 #2nd tab - Patient Data
     tabPanel("Patient Data",
              br(),
              DTOutput("patientTable"),
+),
              
-#Tab - Survival analysis
+#3rd tab - Survival analysis
     tabPanel("Survival Analysis",
              br(),
              fluidRow(
                column(8, plotOutput("kmPlot", height = "400px")),
-               column(4,
-                      downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
+               column(4, downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
                       br(), br(),
                       verbatimTextOutput("Survival Summary")
-                      )
-             )),
-# Tab - Clinical outcomes
+                )
+             )
+          ),
+#4th Tab - Clinical outcomes
     tabPanel("Clinical Outcomes",
              br(),
              fluidRow(
                column(6, plotOutput("bpPlot", height = "350px")),
                column(6, plotOutput("biomarkerPlot", height = "350px"))
-             ))
-     )
+             )
+      )
     )
    )
- )
+  )
 )
 #server part
 server <- function(input, output) {
