@@ -179,14 +179,38 @@ km_object <- reactive({
 })
 
 output$kmPlot <- renderPlotly({
+  req(filtered_data())
   
-  ggplotly(km_object()$plot) %>%   
-    layout(
-      hovermode = "closest",
-      xaxis = list(title = "Time (Days)"),
-      yaxis = list(title = "Survival Probability"),
-      showlegend = TRUE
-    ) %>%
+  p <- ggplotly(km_object()$plot, dynamicTicks = TRUE) %>% plotly::plotly_build()
+  
+  p$x$data <- lapply(p$x$data, function(tr) {
+    
+    if (!is.null(tr$name)) {
+      
+      #TRTMT = 0 → Placebo
+      if (grepl("Placebo", tr$name, ignore.case = TRUE) ||
+          grepl("0", tr$name, ignore.case = TRUE)) {
+        tr$name <- "Placebo"
+        tr$legendgroup <- "Placebo"
+      }
+      
+      #TRTMT = 1 → Digoxin
+      if (grepl("Digoxin", tr$name, ignore.case = TRUE) ||
+          grepl("1", tr$name, ignore.case = TRUE)) {
+        tr$name <- "Digoxin"
+        tr$legendgroup <- "Digoxin"
+      }
+    }
+    
+    tr
+  })
+    p %>%
+      layout(
+        hovermode = "closest",
+        xaxis = list(title = "Time (Days)"),
+        yaxis = list(title = "Survival Probability"),
+        showlegend = TRUE
+      ) %>%
     config(displaylogo = FALSE,
            modeBarButtonsToRemove = c(
              "zoom2d",
