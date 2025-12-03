@@ -249,43 +249,6 @@ output$downloadKM <- downloadHandler(
   }
 )
 
-#COX table
-
-output$coxTable <- renderDT({
-  
-  df <- filtered_data()
-  
-  #Ensuring 2 groups
-  if (length(unique(df$TRTMT)) < 2) {
-    return(datatable(
-      data.frame(Message = "Need at least two treatment groups."),
-      rownames = FALSE,
-      options = list(dom = 't')
-    ))
-  }
-  
-  # Cox proportional hazards model
-  model <- coxph(Surv(DEATHDAY, DEATH) ~ TRTMT + AGE + SEX, data = df)
-  sum_model <- summary(model)
-  
-  tbl <- as.data.frame(sum_model$coefficients)
-  
-  tbl$HR        <- round(exp(tbl$coef), 3)
-  tbl$Lower_CI  <- round(exp(tbl$coef - 1.96 * tbl$`se(coef)`), 3)
-  tbl$Upper_CI  <- round(exp(tbl$coef + 1.96 * tbl$`se(coef)`), 3)
-  
-  result <- tbl[, c("HR", "Lower_CI", "Upper_CI", "Pr(>|z|)")]
-  
-  datatable(
-    result,
-    options = list(
-      pageLength = 5,
-      autoWidth = TRUE,
-      dom = 't'
-    ),
-    rownames = TRUE
-  )
-})
 
 #Risk table
 output$riskTable <- renderDT({
