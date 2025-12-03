@@ -110,14 +110,14 @@ ui <- fluidPage(
              fluidRow(
                column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
                column(6, plotlyOutput("creatKScatter", height = "350px"))
-               
-               )
+               ),
+             br(),
+             h4("Risk Profile Interpretation"),
+             verbatimTextOutput("clinicalNote")
       )
     )
   )
 ))
-
-
 
 #server part
 server <- function(input, output) {
@@ -386,6 +386,48 @@ output$creatKScatter <- renderPlotly({
       ),
       modeBarPosition = "bottom"  
     )
+})
+
+#simple clinical notes
+output$clinicalNote <- renderText({
+  
+  df <- filtered_data()
+  
+  if(nrow(df) == 0){
+    return("No data available for this selection.")
+  }
+  
+  mean_creat_placebo <- mean(df$CREAT[df$TRTMT == "Placebo"], na.rm = TRUE)
+  mean_creat_digoxin <- mean(df$CREAT[df$TRTMT == "Digoxin"], na.rm = TRUE)
+  
+  mean_k_placebo <- mean(df$KLEVEL[df$TRTMT == "Placebo"], na.rm = TRUE)
+  mean_k_digoxin <- mean(df$KLEVEL[df$TRTMT == "Digoxin"], na.rm = TRUE)
+  
+  note <- "• Creatinine and potassium levels appear broadly similar across treatment groups.\n"
+  
+  if(!is.na(mean_creat_digoxin) && !is.na(mean_creat_placebo)){
+    if(mean_creat_digoxin > mean_creat_placebo + 0.1){
+      note <- paste0(note, "• Digoxin group shows slightly higher creatinine, indicating possible reduced kidney clearance.\n")
+    }
+  }
+  
+  if(!is.na(mean_k_digoxin) && !is.na(mean_k_placebo)){
+    if(mean_k_digoxin > mean_k_placebo + 0.1){
+      note <- paste0(note, "• Potassium levels are slightly higher in the Digoxin group.\n")
+    }
+  }
+  
+  cor_val <- suppressWarnings(cor(df$CREAT, df$KLEVEL, use = "complete.obs"))
+  
+  if(!is.na(cor_val) && cor_val > 0.3){
+    note <- paste0(note, "• Creatinine and potassium show a positive relationship, which may indicate increased clinical risk.\n")
+  }
+  
+  if(nrow(df) < 1000){
+    note <- paste0(note, "• Interpretation is based on a filtered subset of patients.\n")
+  }
+  
+  return(note)
 })
 
 }
