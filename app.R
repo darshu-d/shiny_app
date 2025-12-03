@@ -6,6 +6,7 @@ library(plotly)
 library(DT)
 library(survival)
 library(survminer)
+library(bslib)
 
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
@@ -25,6 +26,7 @@ dig_dataset <- dig_dataset %>%
 
 #ui part
 ui <- fluidPage(
+  theme = bs_theme(bootswatch = "minty"),
   # TITLE
   div(style="background:#2C3E50; padding:18px; color:white; 
              font-size:28px; font-weight:bold; text-align:center;
