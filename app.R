@@ -104,6 +104,7 @@ ui <- fluidPage(
              br(),
              fluidRow(
                column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
+               column(6, plotlyOutput("creatKScatter", height = "350px"))
              )
       )
     )
@@ -302,6 +303,40 @@ output$biomarkerBoxPlot <- renderPlotly({
         "toggleSpikelines"
       ),
       modeBarPosition = "bottom"
+    )
+})
+
+#scatter plot
+output$creatKScatter <- renderPlotly({
+  
+  df <- filtered_data()
+  
+  p <- ggplot(df, aes(x = CREAT, y = KLEVEL, color = TRTMT)) +
+    geom_point(alpha = 0.6, size = 2) +
+    geom_smooth(method = "lm", se = FALSE) +
+    scale_color_manual(values = c("Placebo" = "#6A5ACD",
+                                  "Digoxin" = "#F39C12")) +
+    labs(
+      x = "Creatinine",
+      y = "Potassium Level",
+      color = "Treatment",
+      title = "Creatinine vs Potassium (Risk Profile)"
+    ) +
+    theme_minimal()
+  
+  ggplotly(p, tooltip = c("x", "y", "color")) %>%
+    config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = c(
+        "zoom2d",
+        "pan2d",
+        "lasso2d",
+        "select2d",
+        "hoverClosestCartesian",
+        "hoverCompareCartesian",
+        "toggleSpikelines"
+      ),
+      modeBarPosition = "bottom"  
     )
 })
 
