@@ -108,8 +108,7 @@ ui <- fluidPage(
     tabPanel("Clinical Outcomes",
              br(),
              fluidRow(
-               column(6, plotOutput("bpPlot", height = "350px")),
-               column(6, plotOutput("biomarkerPlot", height = "350px"))
+               column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
              )
       )
     )
@@ -309,16 +308,49 @@ output$riskTable <- renderDT({
   datatable(
     risk_df,
     options = list(
-      dom = 't',        # ← IMPORTANT: removes search box & show entries
-      paging = FALSE,   # ← no pagination
-      ordering = TRUE,  # keep sorting allowed
+      dom = 't',    
+      paging = FALSE,   
+      ordering = TRUE,  
       autoWidth = TRUE
     ),
     rownames = FALSE
   )
 })
 
-
+#box plot
+output$biomarkerBoxPlot <- renderPlotly({
+  
+  df <- filtered_data()
+  
+  df_long <- df %>%
+    tidyr::pivot_longer(cols = c(CREAT, KLEVEL),
+                        names_to = "Biomarker",
+                        values_to = "Value")
+  
+  p <- ggplot(df_long, aes(x = TRTMT, y = Value, fill = TRTMT)) +
+    geom_boxplot(alpha = 0.7) +
+    scale_fill_manual(values = c("Placebo" = "#6A5ACD",
+                                 "Digoxin" = "#F39C12")) +
+    facet_wrap(~Biomarker, scales = "free_y") +
+    labs(
+      x = "Treatment",
+      y = "Value",
+      fill = "Treatment",
+      title = "Creatinine & Potassium by Treatment"
+    ) +
+    theme_minimal()
+  
+  ggplotly(p) %>%
+    config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = c(
+        "zoom2d","pan2d","lasso2d","select2d",
+        "hoverClosestCartesian","hoverCompareCartesian",
+        "toggleSpikelines"
+      ),
+      modeBarPosition = "bottom"
+    )
+})
 
 }
 
