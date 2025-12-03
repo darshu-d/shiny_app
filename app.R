@@ -434,4 +434,6 @@ output$clinicalNote <- renderText({
 
 shinyApp(ui = ui, server = server)
 
+#testing
+
 #connected successfully
