@@ -7,6 +7,9 @@ library(DT)
 library(survival)
 library(survminer)
 library(bslib)
+library(shinyWidgets)
+library(shinycssloaders)
+library(shinythemes)
 
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
@@ -76,29 +79,31 @@ ui <- fluidPage(
     
     br(),
     h4("Age Group Distribution"),
-    plotOutput("agePlot", height = "350px")
+    plotlyOutput("agePlot", height = "350px")
 ),
     
 #2nd tab - Patient Data
     tabPanel("Patient Data",
              br(),
-             DTOutput("patientTable"),
+             DTOutput("patientTable") %>% withSpinner(type = 7)
 ),
              
 #3rd tab - Survival analysis
     tabPanel("Survival Analysis",
-             br(),
-             fluidRow(
-               column(8, plotlyOutput("kmPlot", height = "400px")),
-               column(4, downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
-                      br(), br(),
-                      verbatimTextOutput("Survival Summary")
-                )
-             ),
-             br(),
-             h4("Risk Table"),
-             DTOutput("riskTable")
-          ),
+              br(),
+              fluidRow(
+              column(8, plotlyOutput("kmPlot", height = "400px")),
+              column(4, 
+                    downloadButton("downloadKM", "Download KM Plot", class = "btn-primary btn-block"),
+                    DTOutput("coxTable"),
+                    br(), br(),
+                    verbatimTextOutput("Survival Summary")
+              )
+            ),
+            br(),
+            h4("Risk Table"),
+            DTOutput("riskTable")
+    ),
 #4th Tab - Clinical outcomes
     tabPanel("Clinical Outcomes",
              br(),
@@ -108,9 +113,11 @@ ui <- fluidPage(
              )
       )
     )
-   )
   )
-)
+))
+
+
+
 #server part
 server <- function(input, output) {
   
@@ -137,15 +144,16 @@ server <- function(input, output) {
     return(data)
   })
 
+
 #VALUE BOX NUMBERS
   output$totalPatients <- renderText({ nrow(filtered_data())})
   output$alivePatients <- renderText({ sum(filtered_data()$DEATH == 0, na.rm = TRUE)})
   output$deadPatients  <- renderText({ sum(filtered_data()$DEATH == 1, na.rm = TRUE)})
 
 #AGE DISTRIBUTION PLOT
-output$agePlot <- renderPlot({
+output$agePlot <- renderPlotly({
   df <- filtered_data()
-  ggplot(df, aes(x = age_group, fill = TRTMT)) +
+  plot <- ggplot(df, aes(x = age_group, fill = TRTMT)) +
     geom_bar(position = "dodge") +
     scale_fill_manual(
       values = c("Placebo" = "#6A5ACD", "Digoxin" = "#F39C12"),
@@ -155,6 +163,7 @@ output$agePlot <- renderPlot({
          title = "Age Group Distribution by Treatment") +
     theme_minimal(base_size = 14) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplotly(plot)
 })
 
 
@@ -239,6 +248,44 @@ output$downloadKM <- downloadHandler(
     ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300)  # ✔ Correct reactive call
   }
 )
+
+#COX table
+
+output$coxTable <- renderDT({
+  
+  df <- filtered_data()
+  
+  #Ensuring 2 groups
+  if (length(unique(df$TRTMT)) < 2) {
+    return(datatable(
+      data.frame(Message = "Need at least two treatment groups."),
+      rownames = FALSE,
+      options = list(dom = 't')
+    ))
+  }
+  
+  # Cox proportional hazards model
+  model <- coxph(Surv(DEATHDAY, DEATH) ~ TRTMT + AGE + SEX, data = df)
+  sum_model <- summary(model)
+  
+  tbl <- as.data.frame(sum_model$coefficients)
+  
+  tbl$HR        <- round(exp(tbl$coef), 3)
+  tbl$Lower_CI  <- round(exp(tbl$coef - 1.96 * tbl$`se(coef)`), 3)
+  tbl$Upper_CI  <- round(exp(tbl$coef + 1.96 * tbl$`se(coef)`), 3)
+  
+  result <- tbl[, c("HR", "Lower_CI", "Upper_CI", "Pr(>|z|)")]
+  
+  datatable(
+    result,
+    options = list(
+      pageLength = 5,
+      autoWidth = TRUE,
+      dom = 't'
+    ),
+    rownames = TRUE
+  )
+})
 
 #Risk table
 output$riskTable <- renderDT({
