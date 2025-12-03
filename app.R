@@ -108,8 +108,8 @@ ui <- fluidPage(
     tabPanel("Clinical Outcomes",
              br(),
              fluidRow(
-               column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
-               column(6, plotlyOutput("creatKScatter", height = "350px"))
+               column(6, plotOutput("bpPlot", height = "350px")),
+               column(6, plotOutput("biomarkerPlot", height = "350px"))
              )
       )
     )
@@ -249,6 +249,43 @@ output$downloadKM <- downloadHandler(
   }
 )
 
+#COX table
+
+output$coxTable <- renderDT({
+  
+  df <- filtered_data()
+  
+  #Ensuring 2 groups
+  if (length(unique(df$TRTMT)) < 2) {
+    return(datatable(
+      data.frame(Message = "Need at least two treatment groups."),
+      rownames = FALSE,
+      options = list(dom = 't')
+    ))
+  }
+  
+  # Cox proportional hazards model
+  model <- coxph(Surv(DEATHDAY, DEATH) ~ TRTMT + AGE + SEX, data = df)
+  sum_model <- summary(model)
+  
+  tbl <- as.data.frame(sum_model$coefficients)
+  
+  tbl$HR        <- round(exp(tbl$coef), 3)
+  tbl$Lower_CI  <- round(exp(tbl$coef - 1.96 * tbl$`se(coef)`), 3)
+  tbl$Upper_CI  <- round(exp(tbl$coef + 1.96 * tbl$`se(coef)`), 3)
+  
+  result <- tbl[, c("HR", "Lower_CI", "Upper_CI", "Pr(>|z|)")]
+  
+  datatable(
+    result,
+    options = list(
+      pageLength = 5,
+      autoWidth = TRUE,
+      dom = 't'
+    ),
+    rownames = TRUE
+  )
+})
 
 #Risk table
 output$riskTable <- renderDT({
@@ -281,74 +318,7 @@ output$riskTable <- renderDT({
   )
 })
 
-#boxplot
-output$biomarkerBoxPlot <- renderPlotly({
-  
-  df <- filtered_data()
-  
-  df_long <- df %>%
-    tidyr::pivot_longer(cols = c(CREAT, KLEVEL),
-                        names_to = "Biomarker",
-                        values_to = "Value")
-  
-  p <- ggplot(df_long, aes(x = TRTMT, y = Value, fill = TRTMT)) +
-    geom_boxplot(alpha = 0.7) +
-    scale_fill_manual(values = c("Placebo" = "#6A5ACD",
-                                 "Digoxin" = "#F39C12")) +
-    facet_wrap(~Biomarker, scales = "free_y") +
-    labs(
-      x = "Treatment",
-      y = "Value",
-      fill = "Treatment",
-      title = "Creatinine & Potassium by Treatment"
-    ) +
-    theme_minimal()
-  
-  ggplotly(p) %>%
-    config(
-      displaylogo = FALSE,
-      modeBarButtonsToRemove = c(
-        "zoom2d","pan2d","lasso2d","select2d",
-        "hoverClosestCartesian","hoverCompareCartesian",
-        "toggleSpikelines"
-      ),
-      modeBarPosition = "bottom"
-    )
-})
 
-#scatter plot
-output$creatKScatter <- renderPlotly({
-  
-  df <- filtered_data()
-  
-  p <- ggplot(df, aes(x = CREAT, y = KLEVEL, color = TRTMT)) +
-    geom_point(alpha = 0.6, size = 2) +
-    geom_smooth(method = "lm", se = FALSE) +
-    scale_color_manual(values = c("Placebo" = "#6A5ACD",
-                                  "Digoxin" = "#F39C12")) +
-    labs(
-      x = "Creatinine",
-      y = "Potassium Level",
-      color = "Treatment",
-      title = "Creatinine vs Potassium (Risk Profile)"
-    ) +
-    theme_minimal()
-  
-  ggplotly(p, tooltip = c("x", "y", "color")) %>%
-    config(
-      displaylogo = FALSE,
-      modeBarButtonsToRemove = c(
-        "zoom2d",
-        "pan2d",
-        "lasso2d",
-        "select2d",
-        "hoverClosestCartesian",
-        "hoverCompareCartesian",
-        "toggleSpikelines"
-      ),
-      modeBarPosition = "bottom"  
-    )
-})
 
 }
 
