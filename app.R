@@ -114,7 +114,18 @@ ui <- fluidPage(
              br(),
              h4("Risk Profile Interpretation"),
              verbatimTextOutput("clinicalNote")
-      )
+      ),
+#5th Tab - Risk factors
+    tabPanel("Risk Factors",
+              br(),
+              fluidRow(
+              column(6, plotlyOutput("comorbidityPlot", height = "350px")),
+              column(6, plotlyOutput("nyhaPlot", height = "350px"))
+              ),
+            br(),
+            h4("Multivariable Risk Summary"),
+            DTOutput("riskFactorsTable")
+    )
     )
   )
 ))
