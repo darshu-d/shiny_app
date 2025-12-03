@@ -246,7 +246,7 @@ output$downloadKM <- downloadHandler(
   },
   
   content = function(file) {
-    ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300)  # ✔ Correct reactive call
+    ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300) 
   }
 )
 
