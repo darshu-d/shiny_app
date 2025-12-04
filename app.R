@@ -11,6 +11,7 @@ library(shinyWidgets)
 library(shinycssloaders)
 library(shinythemes)
 library(tidyr)
+library(scales)
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
 
@@ -412,6 +413,54 @@ output$creatKScatter <- renderPlotly({
       modeBarPosition = "bottom"  
     )
 })
+#Clinical summary
+output$outcomeBar <- renderPlotly({                    
+  df <- filtered_data()
+  req(nrow(df) > 0)
+  
+  var <- input$outcomeVar   # "HOSP", "CVD", "WHF", "DEATH"
+  df$outcome <- df[[var]]
+  
+  plot_df <- df %>%
+    filter(!is.na(outcome)) %>%
+    group_by(TRTMT) %>%
+    summarise(Rate = mean(outcome == 1, na.rm = TRUE),
+              .groups = "drop")
+  
+  p <- ggplot(plot_df, aes(x = TRTMT, y = Rate, fill = TRTMT)) +
+    geom_col(alpha = 0.8) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    scale_fill_manual(values = c("Placebo" = "#6A5ACD",
+                                 "Digoxin" = "#F39C12")) +
+    labs(x = "Treatment", y = "Event rate",
+         title = "Event rate by treatment") +
+    theme_minimal()
+  
+  ggplotly(p, height = 350) %>%
+    config(displaylogo = FALSE)
+})
+
+output$outcomeSummary <- renderDT({                     
+  df <- filtered_data()
+  req(nrow(df) > 0)
+  
+  summary_df <- df %>%
+    group_by(TRTMT) %>%
+    summarise(
+      N              = n(),
+      `Hosp %`       = round(mean(HOSP > 0, na.rm = TRUE) * 100, 1),
+      `Mean days hosp` = round(mean(HOSPDAYS[HOSP > 0], na.rm = TRUE), 1),
+      `CVD %`        = round(mean(CVD == 1, na.rm = TRUE) * 100, 1),
+      `WHF %`        = round(mean(WHF == 1, na.rm = TRUE) * 100, 1),
+      `Death %`      = round(mean(DEATH == 1, na.rm = TRUE) * 100, 1),
+      .groups = "drop"
+    )
+  
+  datatable(summary_df,
+            options = list(dom = "t", paging = FALSE, scrollX = TRUE),
+            rownames = FALSE)
+})
+
 
 #simple clinical notes
 output$clinicalNote <- renderText({
