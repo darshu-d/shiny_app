@@ -12,6 +12,7 @@ library(shinycssloaders)
 library(shinythemes)
 library(tidyr)
 library(scales)
+library(rsconnect)
 
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
@@ -451,7 +452,7 @@ output$outcomeBar <- renderPlotly({
   df <- filtered_data()
   req(nrow(df) > 0)
   
-  var <- input$outcomeVar   # "HOSP", "CVD", "WHF", "DEATH"
+  var <- input$outcomeVar 
   df$outcome <- df[[var]]
   
   plot_df <- df %>%
