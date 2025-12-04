@@ -10,7 +10,7 @@ library(bslib)
 library(shinyWidgets)
 library(shinycssloaders)
 library(shinythemes)
-
+library(tidyr)
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
 
@@ -119,13 +119,14 @@ ui <- fluidPage(
     tabPanel("Risk Factors",
               br(),
               fluidRow(
-              column(6, plotlyOutput("comorbidityPlot", height = "350px")),
-              column(6, plotlyOutput("nyhaPlot", height = "350px"))
-              ),
+                column(6, plotlyOutput("comorbidityPlot", height = "350px")),
+                column(6, plotlyOutput("vitalsPlot", height = "350px"))
+                ),
             br(),
-            h4("Multivariable Risk Summary"),
+            h4("Risk Profile Summary"),
             DTOutput("riskFactorsTable")
     )
+
     )
   )
 ))
@@ -440,6 +441,72 @@ output$clinicalNote <- renderText({
   
   return(note)
 })
+
+#Risk factors
+output$comorbidityPlot <- renderPlotly({
+  df <- filtered_data()
+  
+  df$TRTMT <- factor(df$TRTMT, levels = c("Placebo", "Digoxin"))
+  df$hypertension <- factor(df$HYPERTEN, levels = c(0,1), labels = c("No HTN", "Hypertension"))
+  
+  p <- ggplot(df, aes(x = hypertension, fill = TRTMT)) +
+    geom_bar(position = "dodge", alpha = 0.8) +
+    scale_fill_manual(values = c("Placebo" = "#6A5ACD", "Digoxin" = "#F39C12")) +
+    labs(title = "Hypertension Prevalence by Treatment", 
+         x = "Hypertension Status", y = "Count") +
+    theme_minimal(base_size = 12)
+  
+  ggplotly(p, height = 350) %>% 
+    config(displayModeBar = FALSE, displaylogo = FALSE)
+})
+
+output$vitalsPlot <- renderPlotly({
+  df <- filtered_data()
+  
+  df$TRTMT <- factor(df$TRTMT, levels = c("Placebo", "Digoxin"))
+  
+  df_long <- df %>%
+    select(SYSBP, DIABP, BMI) %>%
+    pivot_longer(everything(), names_to = "Vital", values_to = "Value") %>%
+    filter(!is.na(Value))
+  
+  p <- ggplot(df_long, aes(x = TRTMT, y = Value, fill = TRTMT)) +
+    geom_boxplot(alpha = 0.7) +
+    facet_wrap(~Vital, scales = "free_y") +
+    scale_fill_manual(values = c("Placebo" = "#6A5ACD", "Digoxin" = "#F39C12")) +
+    labs(title = "Vital Signs by Treatment", x = "Treatment", y = "Value") +
+    theme_minimal(base_size = 12)
+  
+  ggplotly(p, height = 350) %>% 
+    config(displayModeBar = FALSE, displaylogo = FALSE)
+})
+
+output$riskFactorsTable <- renderDT({
+  df <- filtered_data()
+  
+  df$TRTMT <- factor(df$TRTMT, levels = c("Placebo", "Digoxin"))
+  
+  risk_summary <- df %>%
+    group_by(TRTMT) %>%
+    summarise(
+      N = n(),
+      "HTN %" = round(mean(HYPERTEN, na.rm = TRUE) * 100, 1),
+      "Mean Age" = round(mean(AGE, na.rm = TRUE), 1),
+      "Mean BMI" = round(mean(BMI, na.rm = TRUE), 1),
+      "Mean SYSBP" = round(mean(SYSBP, na.rm = TRUE), 1),
+      "Mean DIABP" = round(mean(DIABP, na.rm = TRUE), 1),
+      "Mean Creat" = round(mean(CREAT, na.rm = TRUE), 2),
+      "Hosp %" = round(mean(HOSP > 0, na.rm = TRUE) * 100, 1),
+      .groups = 'drop'
+    ) %>%
+    mutate(TRTMT = ifelse(TRTMT == "Placebo", "Placebo", "Digoxin"))
+  
+  datatable(risk_summary,
+            options = list(dom = 't', pageLength = 10, scrollX = TRUE),
+            rownames = FALSE) %>%
+    formatPercentage(c("HTN %", "Hosp %"), 1)
+})
+
 
 }
 
