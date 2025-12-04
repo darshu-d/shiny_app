@@ -12,6 +12,7 @@ library(shinycssloaders)
 library(shinythemes)
 library(tidyr)
 library(scales)
+
 #load dataset
 dig_dataset <- read.csv("DIG.csv")
 
@@ -222,7 +223,6 @@ output$agePlot <- renderPlotly({
   ggplotly(plot)
 })
 
-
 #PATIENT TABLE
 output$patientTable <- renderDT({
   datatable(filtered_data() %>%
@@ -245,7 +245,6 @@ km_object <- reactive({
              ggtheme = theme_minimal(),
              palette = c("#6A5ACD", "#F39C12")
   )
-
 })
 
 output$kmPlot <- renderPlotly({
@@ -299,14 +298,12 @@ output$downloadKM <- downloadHandler(
   filename = function() {
     "KM_plot.png"
   },
-  
   content = function(file) {
     ggsave(file, plot = km_object()$plot, width = 8, height = 6, dpi = 300) 
   }
 )
 
 #COX table
-
 output$coxTable <- renderDT({
   
   df <- filtered_data()
@@ -361,7 +358,6 @@ output$riskTable <- renderDT({
     mutate(
       TRTMT = ifelse(TRTMT == "Placebo", "Placebo", "Digoxin")
     )
-  
   datatable(
     risk_df,
     options = list(
@@ -442,6 +438,7 @@ output$creatKScatter <- renderPlotly({
       modeBarPosition = "bottom"  
     )
 })
+
 #Clinical summary
 output$outcomeBar <- renderPlotly({                    
   df <- filtered_data()
@@ -605,11 +602,6 @@ output$riskFactorsTable <- renderDT({
     DT::formatPercentage(9, 1)
 })
 
-
 }
 
 shinyApp(ui = ui, server = server)
-
-#testing
-
-#connected successfully
