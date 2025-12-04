@@ -67,7 +67,9 @@ ui <- fluidPage(
                   selected = "All"),
       br(),
       helpText("Filters apply to all tabs and update charts and tables in real-time"),
-      actionButton("resetFilters", "Reset Filters", class = "btn-warning")
+      actionButton(inputId = "resetFilters",label =  "Reset Filters", 
+                   style = "background-color:#2C3E50; color:white; padding:8px 18px; border:none; border-radius:6px; font-weight:bold;"
+                   )
     ),
 #main panel
     mainPanel(
