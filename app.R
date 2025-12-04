@@ -139,12 +139,13 @@ ui <- fluidPage(
 #5th Tab - Risk factors
     tabPanel("Risk Factors",
               br(),
+              h4("Hypertension & Vitals by Treatment"),
               fluidRow(
                 column(6, plotlyOutput("comorbidityPlot", height = "350px")),
                 column(6, plotlyOutput("vitalsPlot", height = "350px"))
                 ),
             br(),
-            h4("Risk Profile Summary"),
+            h4("Risk Profile Summary - Baseline"),
             DTOutput("riskFactorsTable")
     )
 
