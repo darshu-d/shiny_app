@@ -66,7 +66,8 @@ ui <- fluidPage(
                               "51-60", "61-70", "71-80", "80+"),
                   selected = "All"),
       br(),
-      helpText("Filters apply to all tabs and update charts and tables in real-time")
+      helpText("Filters apply to all tabs and update charts and tables in real-time"),
+      actionButton("resetFilters", "Reset Filters", class = "btn-warning")
     ),
 #main panel
     mainPanel(
@@ -176,7 +177,7 @@ ui <- fluidPage(
 ))
 
 #server part
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   filtered_data <- reactive({
     data <- dig_dataset
@@ -200,7 +201,11 @@ server <- function(input, output) {
     
     return(data)
   })
-
+  observeEvent(input$resetFilters, {
+    updateSelectInput(session, "TRTMT", selected = "All")
+    updateSelectInput(session, "Sex",   selected = "All")
+    updateSelectInput(session, "Age",   selected = "All")
+  })
 
 #VALUE BOX NUMBERS
   output$totalPatients <- renderText({ nrow(filtered_data())})
