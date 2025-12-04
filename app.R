@@ -31,28 +31,48 @@ dig_dataset <- dig_dataset %>%
 #ui part
 ui <- fluidPage(
   theme = bs_theme(bootswatch = "minty"),
-  # TITLE
-  div(style="background:#2C3E50; padding:18px; color:white; 
-             font-size:28px; font-weight:bold; text-align:center;
-             border-radius:6px; margin-bottom:15px;",
-      "Digitalis Investigation Group – Exploratory Dashboard"
-  ),
-  sidebarLayout (
-    sidebarPanel(
-      width = 2,h4("Filters"),tags$hr(),
-      selectInput("TRTMT", "Treatment", choices = c("All", "Placebo", "Digoxin"), selected = "All"),
-      selectInput("Sex", "Sex", choices = c("All", "Male", "Female"), selected = "All"),
-      selectInput("Age", "Age Group",choices = c("All", "19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"), selected = "All"),
-      br(),
-      helpText("Filters apply to all tabs and analyses")
+  
+  # TITLE & LOGO
+  div(
+    style = "background:#2C3E50; padding:12px 18px; color:white;
+             border-radius:6px; margin-bottom:15px; display:flex;
+             align-items:center; justify-content:space-between;",
+    tags$div(
+      style = "display:flex; align-items:center;",
+      tags$img(
+        src = "dig_consultants_logo.png", height = "40px",
+        style = "margin-right:12px;"
+      ),
+      tags$div(
+        div(style = "font-size:24px; font-weight:bold;",
+            "DIG Heart Failure Trial – Exploratory Dashboard"),
+        div(style = "font-size:13px;",
+            "Digitalis Investigation Group – Placebo vs Digoxin")
+      )
     ),
-
+    
+  ),
+  
+  sidebarLayout(
+    sidebarPanel(
+      width = 2, h4("Filters"), tags$hr(),
+      selectInput("TRTMT", "Treatment arm",
+                  choices = c("All", "Placebo", "Digoxin"), selected = "All"),
+      selectInput("Sex", "Sex",
+                  choices = c("All", "Male", "Female"), selected = "All"),
+      selectInput("Age", "Age Group",
+                  choices = c("All", "19-30", "31-40", "41-50",
+                              "51-60", "61-70", "71-80", "80+"),
+                  selected = "All"),
+      br(),
+      helpText("Filters apply to all tabs and update charts and tables in real-time")
+    ),
 #main panel
     mainPanel(
       tabsetPanel(
        tabPanel("Overview",
                   br(),
-                  
+                  h4("Population overview"),
                   fluidRow(
         
         # Total Patients
@@ -94,6 +114,7 @@ ui <- fluidPage(
 #3rd tab - Survival analysis
     tabPanel("Survival Analysis",
               br(),
+              h4("Kaplan-Meier by Treatment"),
               fluidRow(
               column(8, plotlyOutput("kmPlot", height = "400px")),
               column(4, 
@@ -104,11 +125,11 @@ ui <- fluidPage(
               )
             ),
             br(),
-            h4("Risk Table"),
+            h4("Risk Table by Treatment"),
             DTOutput("riskTable")
     ),
-#4th Tab - Clinical outcomes
-    tabPanel("Clinical Outcomes",
+#4th Tab - Clinical outcomes & Events
+    tabPanel("Clinical Outcomes & Events",
              br(),
              fluidRow(
                column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
@@ -564,13 +585,13 @@ output$riskFactorsTable <- renderDT({
     group_by(TRTMT) %>%
     summarise(
       N = n(),
-      `HTN %` = round(mean(HYPERTEN, na.rm = TRUE) * 100, 1),
+      `HTN %` = mean(HYPERTEN, na.rm = TRUE),
       `Mean Age` = round(mean(AGE, na.rm = TRUE), 1),
       `Mean BMI` = round(mean(BMI, na.rm = TRUE), 1),
       `Mean SYSBP` = round(mean(SYSBP, na.rm = TRUE), 1),
       `Mean DIABP` = round(mean(DIABP, na.rm = TRUE), 1),
       `Mean Creat` = round(mean(CREAT, na.rm = TRUE), 2),
-      `Hosp %` = round(mean(HOSP > 0, na.rm = TRUE) * 100, 1),
+      `Hosp %` = mean(HOSP > 0, na.rm = TRUE),
       .groups = 'drop'
     ) %>%
     mutate(TRTMT = ifelse(TRTMT == "Placebo", "Placebo", "Digoxin"))
@@ -580,7 +601,7 @@ output$riskFactorsTable <- renderDT({
     options = list(dom = "t", pageLength = 10, scrollX = TRUE),
     rownames = FALSE
   ) %>%
-    DT::formatPercentage(2, 1) %>%   
+    DT::formatPercentage(3, 1) %>%   
     DT::formatPercentage(9, 1)
 })
 
