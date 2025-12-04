@@ -40,9 +40,11 @@ ui <- fluidPage(
   sidebarLayout (
     sidebarPanel(
       width = 2,h4("Filters"),tags$hr(),
-      selectInput("TRTMT", "Treatment", choices = c("All", "Digoxin", "Placebo"), selected = "All"),
+      selectInput("TRTMT", "Treatment", choices = c("All", "Placebo", "Digoxin"), selected = "All"),
       selectInput("Sex", "Sex", choices = c("All", "Male", "Female"), selected = "All"),
-      selectInput("Age", "Age Group",choices = c("All", "19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"), selected = "All")
+      selectInput("Age", "Age Group",choices = c("All", "19-30", "31-40", "41-50", "51-60", "61-70", "71-80", "80+"), selected = "All"),
+      br(),
+      helpText("Filters apply to all tabs and analyses")
     ),
 
 #main panel
@@ -113,21 +115,26 @@ ui <- fluidPage(
                column(6, plotlyOutput("creatKScatter", height = "350px"))
              ),
              br(),
-             selectInput(
+             fluidRow(
+               column(
+                 4,
+                 selectInput(
                "outcomeVar", "Outcome",
                choices = c("Hospitalization (any)" = "HOSP",
                            "Cardiovascular death" = "CVD",
                            "Worsening HF"        = "WHF",
                            "All-cause death"     = "DEATH"),
                selected = "DEATH"
+                 )
              ),
-             plotlyOutput("outcomeBar", height = "350px"),
-             h4("Clinical Outcomes Summary"),
-             DTOutput("outcomeSummary"),
-             
-             br(),
-             h4("Risk Profile Interpretation"),
-             verbatimTextOutput("clinicalNote")
+             column(8, plotlyOutput("outcomeBar", height = "350px"))
+            ),
+            br(),
+            h4("Clinical Outcomes Summary"),
+            DTOutput("outcomeSummary"),
+            br(),
+            h4("Risk Profile Interpretation"),
+            verbatimTextOutput("clinicalNote")
       ),
 #5th Tab - Risk factors
     tabPanel("Risk Factors",
