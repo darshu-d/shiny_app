@@ -110,7 +110,20 @@ ui <- fluidPage(
              fluidRow(
                column(6, plotlyOutput("biomarkerBoxPlot", height = "350px")),
                column(6, plotlyOutput("creatKScatter", height = "350px"))
-               ),
+             ),
+             br(),
+             selectInput(
+               "outcomeVar", "Outcome",
+               choices = c("Hospitalization (any)" = "HOSP",
+                           "Cardiovascular death" = "CVD",
+                           "Worsening HF"        = "WHF",
+                           "All-cause death"     = "DEATH"),
+               selected = "DEATH"
+             ),
+             plotlyOutput("outcomeBar", height = "350px"),
+             h4("Clinical Outcomes Summary"),
+             DTOutput("outcomeSummary"),
+             
              br(),
              h4("Risk Profile Interpretation"),
              verbatimTextOutput("clinicalNote")
@@ -466,8 +479,12 @@ output$vitalsPlot <- renderPlotly({
   df$TRTMT <- factor(df$TRTMT, levels = c("Placebo", "Digoxin"))
   
   df_long <- df %>%
-    select(SYSBP, DIABP, BMI) %>%
-    pivot_longer(everything(), names_to = "Vital", values_to = "Value") %>%
+    select(TRTMT,SYSBP, DIABP, BMI) %>%
+    tidyr::pivot_longer(
+      cols = c(SYSBP, DIABP, BMI), 
+      names_to = "Vital", 
+      values_to = "Value"
+    ) %>%
     filter(!is.na(Value))
   
   p <- ggplot(df_long, aes(x = TRTMT, y = Value, fill = TRTMT)) +
@@ -490,21 +507,24 @@ output$riskFactorsTable <- renderDT({
     group_by(TRTMT) %>%
     summarise(
       N = n(),
-      "HTN %" = round(mean(HYPERTEN, na.rm = TRUE) * 100, 1),
-      "Mean Age" = round(mean(AGE, na.rm = TRUE), 1),
-      "Mean BMI" = round(mean(BMI, na.rm = TRUE), 1),
-      "Mean SYSBP" = round(mean(SYSBP, na.rm = TRUE), 1),
-      "Mean DIABP" = round(mean(DIABP, na.rm = TRUE), 1),
-      "Mean Creat" = round(mean(CREAT, na.rm = TRUE), 2),
-      "Hosp %" = round(mean(HOSP > 0, na.rm = TRUE) * 100, 1),
+      `HTN %` = round(mean(HYPERTEN, na.rm = TRUE) * 100, 1),
+      `Mean Age` = round(mean(AGE, na.rm = TRUE), 1),
+      `Mean BMI` = round(mean(BMI, na.rm = TRUE), 1),
+      `Mean SYSBP` = round(mean(SYSBP, na.rm = TRUE), 1),
+      `Mean DIABP` = round(mean(DIABP, na.rm = TRUE), 1),
+      `Mean Creat` = round(mean(CREAT, na.rm = TRUE), 2),
+      `Hosp %` = round(mean(HOSP > 0, na.rm = TRUE) * 100, 1),
       .groups = 'drop'
     ) %>%
     mutate(TRTMT = ifelse(TRTMT == "Placebo", "Placebo", "Digoxin"))
   
-  datatable(risk_summary,
-            options = list(dom = 't', pageLength = 10, scrollX = TRUE),
-            rownames = FALSE) %>%
-    formatPercentage(c("HTN %", "Hosp %"), 1)
+  datatable(
+    risk_summary,
+    options = list(dom = "t", pageLength = 10, scrollX = TRUE),
+    rownames = FALSE
+  ) %>%
+    DT::formatPercentage(2, 1) %>%   
+    DT::formatPercentage(9, 1)
 })
 
 
