@@ -41,7 +41,7 @@ ui <- fluidPage(
     tags$div(
       style = "display:flex; align-items:center;",
       tags$img(
-        src = "dig_consultants_logo.png", height = "40px",
+        src = "dig_consultants_logo.jpg", height = "40px",
         style = "margin-right:12px;"
       ),
       tags$div(
